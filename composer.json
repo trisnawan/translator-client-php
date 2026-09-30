@@ -1,0 +1,32 @@
+{
+    "name": "trisnawan/translator-client-php",
+    "type": "library",
+    "description": "Asynchronous PHP client for the Translator REST API: queue translations and verify signed webhook callbacks.",
+    "keywords": [
+        "translate",
+        "translator",
+        "translation",
+        "api",
+        "client",
+        "webhook",
+        "async"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Trisnawan",
+            "email": "contact@trisnawan.com",
+            "homepage": "https://trisnawan.com",
+            "role": "Founder"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Trisnawan\\Translator\\": "src/"
+        }
+    }
+}
