@@ -144,6 +144,8 @@ $webhook = new Webhook($request->server->all(), $request->getContent());
 $webhook = new Webhook(['HTTP_KEY_ID' => $keyId, 'HTTP_AUTHORIZATION' => 'Bearer ' . $token], $jsonBody);
 ```
 
+Nama header dicocokkan tanpa peduli bentuk dan huruf besar/kecil — `key_id`, `Key-Id`, maupun `HTTP_KEY_ID` sama-sama dikenali, jadi array mentah dari `getallheaders()` juga bisa di-inject sebagai `$server`.
+
 Bila aplikasi Anda punya beberapa API key, baca header `key_id` lebih dulu untuk menentukan `secret_key` yang sesuai, baru panggil `validData($keyId, $secretKey)`.
 
 ## Penanganan Error

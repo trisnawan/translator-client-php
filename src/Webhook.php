@@ -37,7 +37,8 @@ class Webhook
     private const STATUSES = ['translated', 'failed'];
 
     /**
-     * @param array<string, mixed>|null $server  Server variables ({@see $_SERVER}); defaults to $_SERVER.
+     * @param array<string, mixed>|null $server  Server variables ({@see $_SERVER}) or a raw header map
+     *                                          such as {@see getallheaders()}; defaults to $_SERVER.
      * @param string|null               $rawBody Raw JSON body; defaults to php://input.
      */
     public function __construct(
@@ -121,7 +122,62 @@ class Webhook
 
         $value = $server[$key] ?? $server['REDIRECT_' . $key] ?? null;
 
-        return is_string($value) ? $value : null;
+        if (is_string($value)) {
+            return $value;
+        }
+
+        // Not every setup builds that CGI-style key: the array may be a raw
+        // header map (getallheaders(), a framework header bag) keeping the
+        // literal name ("key_id"), or the SAPI may lower-case the HTTP_* key.
+        // Scan both sources with a normalized, case-insensitive match.
+        foreach ($this->headerMaps($server) as $headers) {
+            foreach ($headers as $header => $headerValue) {
+                if (is_string($headerValue) && self::serverKey((string) $header) === $key) {
+                    return $headerValue;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Header maps to inspect when the CGI-style lookup misses: the injected
+     * (or global) server array and, when the SAPI provides it, the raw header
+     * map from {@see getallheaders()}.
+     *
+     * @param array<array-key, mixed> $server
+     *
+     * @return list<array<array-key, mixed>>
+     */
+    private function headerMaps(array $server): array
+    {
+        $maps = [$server];
+
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+
+            if (is_array($headers)) {
+                $maps[] = $headers;
+            }
+        }
+
+        return $maps;
+    }
+
+    /**
+     * Normalize a header or server variable name to CGI form so "key_id",
+     * "Key-Id", "HTTP_KEY_ID" and "REDIRECT_HTTP_KEY_ID" all compare equal.
+     */
+    private static function serverKey(string $key): string
+    {
+        $normalized = strtoupper(str_replace('-', '_', $key));
+
+        while (str_starts_with($normalized, 'REDIRECT_')) {
+            $normalized = substr($normalized, 9);
+        }
+
+        return str_starts_with($normalized, 'HTTP_') ? $normalized : 'HTTP_' . $normalized;
     }
 
     private function bearerToken(): string
